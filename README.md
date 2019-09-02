@@ -8,7 +8,7 @@ Crawler für eigene Amazon-Bestellungen.
 
 1. Python 3.7
 2. Optional: Virtualenv für Python
-3. Einen gültigen Amazon.de-Account mit bereits getätigten Bestellungen.
+3. Ein gültiges Amazon.de-Konto mit bereits getätigten Bestellungen.
 
 ## Vorbereitungen
 
@@ -39,3 +39,4 @@ pip install -r requirements.txt
 ```bash
 scrapy crawl my_orders -s AMAZON_LOGIN_EMAIL=<my_email> -s AMAZON_LOGIN_PASSWORD=<my_password>
 ```
+Ersetze dabei <my_email> durch die E-Mail-Adresse und <my_password> durch dass Passwort des Amazon-Kontos.
