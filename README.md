@@ -14,7 +14,14 @@ Crawler für eigene Amazon-Bestellungen.
 
 1. Klone das Git-Repository.
 2. Optional: Erstelle eine neue virtuelle Python Umgebung:
+
 `cd amazon_orders`
+
 `virtualenv venv`
+
 Unter Linux/macOS:
-`venv/virtualenv`
+`source venv/bin/activate`
+
+Unter Windows: 
+`venv/Scripts/activate.bat`
+
