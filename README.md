@@ -34,3 +34,6 @@ venv/Scripts/activate.bat
 ```bash
 pip install -r requirements.txt
 ```
+
+4. Crawler starten
+scrapy crawl my_orders -s AMAZON_LOGIN_EMAIL=<my_email> -s AMAZON_LOGIN_PASSWORD=<my_password>
