@@ -16,7 +16,7 @@ Crawler für eigene Amazon-Bestellungen.
 2. Optional: Erstelle eine neue virtuelle Python Umgebung:
 
 ```bash
-cd amazon_orders`
+cd amazon_orders
 virtualenv venv
 ```
 
@@ -30,3 +30,7 @@ Unter Windows:
 venv/Scripts/activate.bat
 ```
 
+3. Installiere notwendige Python-Pakete
+```bash
+pip install -r requirements.txt
+```
