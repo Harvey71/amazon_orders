@@ -4,7 +4,7 @@ from scrapy.http import FormRequest
 
 
 class CrawlAmazonSpider(scrapy.Spider):
-    name = 'crawl_amazon'
+    name = 'my_orders'
     allowed_domains = ['www.amazon.de']
     start_urls = ['http://www.amazon.de/']
     custom_settings = {
