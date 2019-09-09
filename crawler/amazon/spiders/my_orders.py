@@ -3,13 +3,14 @@ import scrapy
 from scrapy.http import FormRequest
 import dateparser
 import re
+from ..items import OrderItem
 
 class Rule():
     def __init__(self, allow = None, callback = None):
         self.allow = allow
         self.callback = callback
 
-class AmazonOrdersSpider(scrapy.Spider):
+class OrdersSpider(scrapy.Spider):
     name = 'my_orders'
     allowed_domains = ['www.amazon.de']
     start_urls = ['http://www.amazon.de/']
@@ -60,18 +61,33 @@ class AmazonOrdersSpider(scrapy.Spider):
 
     def parse_orders(self, response):
         self.log('parse_orders')
-        orders = response.xpath('//div[@class="a-box-group a-spacing-base order"]')
-        for order in orders:
-            self.log('order')
-            order_info  = order.xpath('.//div[contains(@class," order-info")]')
-            shipment_info = order.xpath('./div/div[@class="a-box shipment"]')
-            order_vals = order_info.xpath('.//span[@class="a-color-secondary value"]/text()').extract()
-            order_date = dateparser.parse(order_vals[0].strip())
-            order_costs = float(order_vals[1].strip().replace('EUR', '').replace(',', '.'))
-            order_number = order_vals[2].strip()
-            self.log('%s %s %s' % (order_date, order_costs, order_number))
-        next_url = response.xpath('//li[@class="a-last"]//a/@href').extract_first()
-        if next_url:
-            yield response.follow(next_url)
+        current_filter = response.xpath('//select[@id="orderFilter"]/option/@selected/parent::*/@value').extract_first()
+        if not re.match(r'year-\d\d\d\d', current_filter):
+            years = response.xpath('//select[@id="orderFilter"]/option/@value').re(r'year-\d\d\d\d')
+            for year in years:
+                request = FormRequest.from_response(
+                    response,
+                    formid='timePeriodForm',
+                    formdata= {'orderFilter': year}
+                )
+                yield request
+        else:
+            orders = response.xpath('//div[@class="a-box-group a-spacing-base order"]')
+            for order in orders:
+                self.log('order')
+                order_info  = order.xpath('.//div[contains(@class," order-info")]')
+                shipment_info = order.xpath('./div/div[@class="a-box shipment"]')
+                order_vals = order_info.xpath('.//span[@class="a-color-secondary value"]/text()').extract()
+                order_date = dateparser.parse(order_vals[0].strip())
+                order_costs = float(order_vals[1].strip().replace('EUR', '').replace(',', '.'))
+                order_number = order_vals[2].strip()
+                yield OrderItem(
+                    order_date=order_date,
+                    order_costs=order_costs,
+                    order_number=order_number
+                )
+            next_url = response.xpath('//li[@class="a-last"]//a/@href').extract_first()
+            if next_url:
+                yield response.follow(next_url)
 
 

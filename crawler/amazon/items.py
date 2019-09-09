@@ -8,7 +8,7 @@
 import scrapy
 
 
-class AmazonItem(scrapy.Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    pass
+class OrderItem(scrapy.Item):
+    order_date = scrapy.Field()
+    order_costs = scrapy.Field()
+    order_number = scrapy.Field()
