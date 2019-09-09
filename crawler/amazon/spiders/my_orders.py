@@ -2,9 +2,14 @@
 import scrapy
 from scrapy.http import FormRequest
 import dateparser
+import re
 
+class Rule():
+    def __init__(self, allow = None, callback = None):
+        self.allow = allow
+        self.callback = callback
 
-class CrawlAmazonSpider(scrapy.Spider):
+class AmazonOrdersSpider(scrapy.Spider):
     name = 'my_orders'
     allowed_domains = ['www.amazon.de']
     start_urls = ['http://www.amazon.de/']
@@ -19,40 +24,42 @@ class CrawlAmazonSpider(scrapy.Spider):
             'UPGRADE_INSECURE_REQUESTS': '1',
         }
     }
+    rules = (
+        Rule(allow=r'/ap/signin', callback='parse_login'),
+        Rule(allow=r'/gp/.*/order-history', callback='parse_orders'),
+        Rule(allow=r'.*', callback='parse_homepage')
+    )
+    logged_in = False
 
     def parse(self, response):
-        self.log('parse')
-        login_url = response.xpath('//a[@id="nav-link-accountList"]/@href').extract_first()
-        yield response.follow(login_url, callback=self.parse_login_email)
+        for rule in self.rules:
+            if re.search(rule.allow, response.url):
+                yield from getattr(self, rule.callback)(response)
+                break
 
-    def parse_login_email(self, response):
-        self.log('parse_login_email')
+    def parse_homepage(self, response):
+        self.log('parse_homepage ' + str(self.logged_in))
+        if not self.logged_in:
+            # use login menu item
+            url = response.xpath('//a[@id="nav-link-accountList"]/@href').extract_first()
+        else:
+            # use orders menu item
+            url = response.xpath('//a[@id="nav-orders"]/@href').extract_first()
+        yield response.follow(url)
+
+    def parse_login(self, response):
+        self.log('parse_login')
         request = FormRequest.from_response(
             response,
-            formdata = {'email': self.settings.get('AMAZON_LOGIN_EMAIL', '')},
-            callback = self.parse_login_password
+            formdata = {
+                'email': self.settings.get('AMAZON_LOGIN_EMAIL', ''),
+                'password': self.settings.get('AMAZON_LOGIN_PASSWORD', '')},
         )
-        self.log(request.headers)
+        self.logged_in = True
         yield request
-
-    def parse_login_password(self, response):
-        self.log('parse_login_password')
-        request = FormRequest.from_response(
-            response,
-            formdata = {'password': self.settings.get('AMAZON_LOGIN_PASSWORD', '')},
-            callback = self.parse_logged_in
-        )
-        yield request
-
-    def parse_logged_in(self, response):
-        self.log('parse_logged_in')
-        orders_url = response.xpath('//a[@id="nav-orders"]/@href').extract_first()
-        yield response.follow(orders_url, callback=self.parse_orders)
 
     def parse_orders(self, response):
         self.log('parse_orders')
-        h1 = response.xpath('//h1').extract_first()
-        self.log(h1)
         orders = response.xpath('//div[@class="a-box-group a-spacing-base order"]')
         for order in orders:
             self.log('order')
@@ -65,6 +72,6 @@ class CrawlAmazonSpider(scrapy.Spider):
             self.log('%s %s %s' % (order_date, order_costs, order_number))
         next_url = response.xpath('//li[@class="a-last"]//a/@href').extract_first()
         if next_url:
-            yield response.follow(next_url, callback=self.parse_orders)
+            yield response.follow(next_url)
 
 
